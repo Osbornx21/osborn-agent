@@ -1,0 +1,5 @@
+{
+  "type": "input_audio_buffer.append",
+  "event_id": "event_fixture_001",
+  "audio": "<base64_pcm_audio_delta>"
+}

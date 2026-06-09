@@ -1,0 +1,4 @@
+{
+  "wire": "websocket_binary",
+  "payload": "<decoded_pcm_16k_mono_s16le>"
+}

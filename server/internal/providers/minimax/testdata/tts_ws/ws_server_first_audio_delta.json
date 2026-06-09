@@ -1,0 +1,18 @@
+{
+  "session_id": "session_fixture",
+  "event": "task_continued",
+  "trace_id": "trace_fixture",
+  "data": {
+    "audio": "10203040"
+  },
+  "extra_info": {
+    "audio_channel": 1,
+    "audio_format": "mp3",
+    "audio_sample_rate": 32000,
+    "bitrate": 128000
+  },
+  "base_resp": {
+    "status_code": 0,
+    "status_msg": "success"
+  }
+}

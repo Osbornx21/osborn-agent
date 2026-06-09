@@ -1,0 +1,11 @@
+{
+  "type": "tts_session.update",
+  "session": {
+    "voice": "zh_female_kailangjiejie_moon_bigtts",
+    "output_audio_format": "pcm",
+    "output_audio_sample_rate": 16000,
+    "text_to_speech": {
+      "model": "doubao-tts"
+    }
+  }
+}

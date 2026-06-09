@@ -1,0 +1,6 @@
+{
+  "error": {
+    "type": "invalid_authentication_error",
+    "message": "Invalid Authentication"
+  }
+}

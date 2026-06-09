@@ -1,0 +1,5 @@
+{
+  "http_status": 401,
+  "code": "AuthenticationFailed",
+  "message": "<redacted auth failure>"
+}

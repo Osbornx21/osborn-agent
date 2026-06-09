@@ -1,0 +1,11 @@
+{
+  "model": "Qwen/Qwen3.5-35B-A3B",
+  "messages": [
+    {
+      "role": "user",
+      "content": "hello"
+    }
+  ],
+  "enable_thinking": false,
+  "max_tokens": 160
+}

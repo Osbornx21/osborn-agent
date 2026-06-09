@@ -1,0 +1,5 @@
+{
+  "http_status": 401,
+  "code": "InvalidApiKey",
+  "message": "<redacted websocket handshake auth failure>"
+}

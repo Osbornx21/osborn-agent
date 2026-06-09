@@ -1,0 +1,1 @@
+data: {"id":"moonshot-fixture-llm-001","object":"chat.completion.chunk","created":1780000001,"model":"moonshot-v1-8k","choices":[{"index":0,"delta":{},"finish_reason":"stop","usage":{"prompt_tokens":8,"completion_tokens":2,"total_tokens":10}}]}

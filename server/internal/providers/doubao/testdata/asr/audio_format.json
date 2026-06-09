@@ -1,0 +1,15 @@
+{
+  "xiaozhi_uplink": {
+    "codec": "opus",
+    "sample_rate_hz": 16000,
+    "channels": 1
+  },
+  "gateway_to_provider": {
+    "codec": "pcm_s16le",
+    "sample_rate_hz": 16000,
+    "bits": 16,
+    "channels": 1,
+    "wire": "base64_json_event"
+  },
+  "gateway_action": "decode_xiaozhi_opus_before_provider"
+}

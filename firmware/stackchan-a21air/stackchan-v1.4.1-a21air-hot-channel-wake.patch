@@ -1,0 +1,12 @@
+diff --git a/firmware/xiaozhi-esp32/main/application.cc b/firmware/xiaozhi-esp32/main/application.cc
+index d69d43d..eec1ee2 100644
+--- a/firmware/xiaozhi-esp32/main/application.cc
++++ b/firmware/xiaozhi-esp32/main/application.cc
+@@ -881,6 +881,7 @@ void Application::HandleWakeWordDetectedEvent() {
+             return;
+         }
+         // Channel already opened, continue directly
++        SetDeviceState(kDeviceStateConnecting);
+         ContinueWakeWordInvoke(wake_word);
+     } else if (state == kDeviceStateSpeaking || state == kDeviceStateListening) {
+         AbortSpeaking(kAbortReasonWakeWordDetected);

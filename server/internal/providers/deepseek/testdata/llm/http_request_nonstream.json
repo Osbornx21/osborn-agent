@@ -1,0 +1,18 @@
+{
+  "model": "deepseek-v4-flash",
+  "stream": false,
+  "max_tokens": 160,
+  "thinking": {
+    "type": "disabled"
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant."
+    },
+    {
+      "role": "user",
+      "content": "Say hello in one short sentence."
+    }
+  ]
+}

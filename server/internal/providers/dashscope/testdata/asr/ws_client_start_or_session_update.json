@@ -1,0 +1,19 @@
+{
+  "header": {
+    "action": "run-task",
+    "task_id": "task_fixture_dashscope_asr",
+    "streaming": "duplex"
+  },
+  "payload": {
+    "task_group": "audio",
+    "task": "asr",
+    "function": "recognition",
+    "model": "fun-asr-realtime",
+    "parameters": {
+      "format": "pcm",
+      "sample_rate": 16000,
+      "semantic_punctuation_enabled": false
+    },
+    "input": {}
+  }
+}

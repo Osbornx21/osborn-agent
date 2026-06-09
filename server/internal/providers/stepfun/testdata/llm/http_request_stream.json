@@ -1,0 +1,11 @@
+{
+  "model": "step-3.7-flash",
+  "stream": true,
+  "reasoning_effort": "low",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Say hello in one short sentence."
+    }
+  ]
+}

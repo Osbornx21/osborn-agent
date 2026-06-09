@@ -1,0 +1,8 @@
+{
+  "type": "error",
+  "error": {
+    "type": "authentication_error",
+    "message": "<redacted auth failure>"
+  },
+  "request_id": "req_fixture"
+}

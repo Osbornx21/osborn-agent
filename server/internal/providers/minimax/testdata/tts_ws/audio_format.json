@@ -1,0 +1,14 @@
+{
+  "provider_output": {
+    "codec": "mp3",
+    "sample_rate_hz": 32000,
+    "channels": 1,
+    "wire": "websocket_json_audio_payload"
+  },
+  "xiaozhi_downlink": {
+    "codec": "opus",
+    "sample_rate_hz": 16000,
+    "channels": 1
+  },
+  "gateway_action": "decode_resample_then_encode_xiaozhi_opus"
+}

@@ -1,0 +1,6 @@
+{
+  "type": "conversation.item.input_audio_transcription.completed",
+  "event_id": "event_fixture_005",
+  "item_id": "item_fixture_001",
+  "transcript": "hello"
+}

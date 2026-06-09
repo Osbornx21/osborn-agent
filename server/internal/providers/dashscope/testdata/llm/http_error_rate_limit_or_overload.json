@@ -1,0 +1,5 @@
+{
+  "http_status": 429,
+  "code": "Throttling",
+  "message": "<redacted rate limit or quota failure>"
+}

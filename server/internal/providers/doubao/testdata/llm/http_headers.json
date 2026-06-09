@@ -1,0 +1,4 @@
+{
+  "Authorization": "Bearer <ARK_API_KEY>",
+  "Content-Type": "application/json"
+}

@@ -1,0 +1,76 @@
+diff --git a/firmware/main/Kconfig.projbuild b/firmware/main/Kconfig.projbuild
+index de77132..d3213f0 100644
+--- a/firmware/main/Kconfig.projbuild
++++ b/firmware/main/Kconfig.projbuild
+@@ -766,6 +766,16 @@ config A21_AIR_OPEN_AI_AGENT_DELAY_MS
+     default 3000
+     depends on A21_AIR_OPEN_AI_AGENT_FROM_LAUNCHER
+
++config A21_AIR_KEEP_WAKE_WORD_AWAKE
++    bool "A21 Air: keep wake-word microphone alive in standby"
++    default y
++    depends on BOARD_TYPE_M5STACK_STACK_CHAN
++    help
++        Keep StackChan usable as a desktop voice satellite by preventing the
++        generic power-save timer from disabling wake-word detection and audio
++        input while the device is idle. The display/app may still manage its
++        own lightweight standby visuals; the microphone stays ready for "大头".
++
+ config USE_AUDIO_PROCESSOR
+     bool "Enable Audio Noise Reduction"
+     default y
+diff --git a/firmware/sdkconfig.defaults b/firmware/sdkconfig.defaults
+index fb1c921..f410e3c 100644
+--- a/firmware/sdkconfig.defaults
++++ b/firmware/sdkconfig.defaults
+@@ -22,6 +22,7 @@ CONFIG_SR_MN_CN_MULTINET7_QUANT=y
+ CONFIG_A21_AIR_DISABLE_STACKCHAN_SPEAKING_MOTION=y
+ CONFIG_A21_AIR_OPEN_AI_AGENT_FROM_LAUNCHER=y
+ CONFIG_A21_AIR_OPEN_AI_AGENT_DELAY_MS=3000
++CONFIG_A21_AIR_KEEP_WAKE_WORD_AWAKE=y
+ CONFIG_COMPILER_OPTIMIZATION_SIZE=y
+ CONFIG_COMPILER_CXX_EXCEPTIONS=y
+ CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE=1024
+diff --git a/firmware/xiaozhi-esp32/main/application.cc b/firmware/xiaozhi-esp32/main/application.cc
+index d69d43d..75c94d1 100644
+--- a/firmware/xiaozhi-esp32/main/application.cc
++++ b/firmware/xiaozhi-esp32/main/application.cc
+@@ -1027,5 +1027,9 @@ void Application::OnDeviceStateChanged() {
+             if (listening_mode_ != kListeningModeRealtime) {
+                 audio_service_.EnableVoiceProcessing(false);
++#if CONFIG_A21_AIR_KEEP_WAKE_WORD_AWAKE
++                audio_service_.EnableWakeWordDetection(true);
++#else
+                 // Only AFE wake word can be detected in speaking mode
+                 audio_service_.EnableWakeWordDetection(audio_service_.IsAfeWakeWord());
++#endif
+             }
+diff --git a/firmware/xiaozhi-esp32/main/boards/common/power_save_timer.cc b/firmware/xiaozhi-esp32/main/boards/common/power_save_timer.cc
+index 299d080..ea1a73d 100644
+--- a/firmware/xiaozhi-esp32/main/boards/common/power_save_timer.cc
++++ b/firmware/xiaozhi-esp32/main/boards/common/power_save_timer.cc
+@@ -1,6 +1,7 @@
+ #include "power_save_timer.h"
+ #include "application.h"
+ #include "settings.h"
++#include "sdkconfig.h"
+ 
+ #include <esp_log.h>
+ 
+@@ -48,6 +49,16 @@ void PowerSaveTimer::PowerSaveCheck() {
+         return;
+     }
+ 
++#if CONFIG_A21_AIR_KEEP_WAKE_WORD_AWAKE
++    if (!in_sleep_mode_) {
++        auto& audio_service = app.GetAudioService();
++        if (audio_service.IsWakeWordRunning()) {
++            ticks_ = 0;
++            return;
++        }
++    }
++#endif
++
+     ticks_++;
+     if (seconds_to_sleep_ != -1 && ticks_ >= seconds_to_sleep_) {
+         if (!in_sleep_mode_) {

@@ -1,0 +1,1 @@
+data: {"id":"minimax-fixture-llm-001","object":"chat.completion.chunk","created":1780000000,"model":"MiniMax-M3","choices":[{"index":0,"delta":{"role":"assistant","content":"Hello"},"finish_reason":null}],"base_resp":{"status_code":0,"status_msg":"success"}}

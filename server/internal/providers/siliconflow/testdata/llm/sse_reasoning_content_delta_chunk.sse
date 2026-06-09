@@ -1,0 +1,1 @@
+data: {"id":"siliconflow-fixture-llm-001","object":"chat.completion.chunk","created":1780000000,"model":"Qwen/Qwen3.5-35B-A3B","choices":[{"index":0,"delta":{"reasoning_content":"thinking"},"finish_reason":null}]}

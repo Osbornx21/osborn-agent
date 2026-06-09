@@ -1,0 +1,14 @@
+{
+  "xiaozhi_uplink": {
+    "codec": "opus",
+    "sample_rate_hz": 16000,
+    "channels": 1
+  },
+  "gateway_to_provider": {
+    "codec": "pcm_s16le",
+    "sample_rate_hz": 16000,
+    "channels": 1,
+    "wire": "websocket_binary"
+  },
+  "gateway_action": "decode_xiaozhi_raw_opus_to_pcm_with_explicit_libopus_decoder; never send raw xiaozhi opus as DashScope format=opus"
+}

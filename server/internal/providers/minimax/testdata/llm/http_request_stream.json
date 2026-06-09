@@ -1,0 +1,14 @@
+{
+  "model": "MiniMax-M3",
+  "stream": true,
+  "max_completion_tokens": 160,
+  "thinking": {
+    "type": "disabled"
+  },
+  "messages": [
+    {
+      "role": "user",
+      "content": "Say hello in one short sentence."
+    }
+  ]
+}

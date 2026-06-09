@@ -1,0 +1,20 @@
+{
+  "data": {
+    "audio": "<hex_encoded_mp3_audio>",
+    "status": 2
+  },
+  "extra_info": {
+    "audio_length": 9900,
+    "audio_sample_rate": 32000,
+    "audio_size": 160323,
+    "bitrate": 128000,
+    "word_count": 1,
+    "audio_format": "mp3",
+    "audio_channel": 1
+  },
+  "trace_id": "trace_fixture",
+  "base_resp": {
+    "status_code": 0,
+    "status_msg": "success"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "header": {
+    "action": "continue-task",
+    "task_id": "task_fixture_dashscope_tts",
+    "streaming": "duplex"
+  },
+  "payload": {
+    "input": {
+      "text": "Hello."
+    }
+  }
+}

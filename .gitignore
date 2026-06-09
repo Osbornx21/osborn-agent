@@ -1,0 +1,46 @@
+# Local plaintext secrets and machine-specific state
+.local/
+*.local
+*.secret
+*.secrets
+*.pem
+*.key
+*.p8
+*.p12
+*.crt
+*.csr
+*.env
+.env
+.env.*
+!.env.example
+
+# Runtime output
+server/var/traces/*
+server/var/reports/*
+server/var/probe-packages/*
+server/var/ecs-packages/*
+server/var/acceptance/*
+server/var/fixtures/*
+server/var/fixtures/**/*
+server/var/memory/*
+server/var/runtime/*
+!server/var/traces/.gitkeep
+!server/var/reports/.gitkeep
+!server/var/probe-packages/.gitkeep
+!server/var/ecs-packages/.gitkeep
+!server/var/acceptance/.gitkeep
+!server/var/fixtures/.gitkeep
+!server/var/fixtures/asr/
+!server/var/fixtures/asr/.gitkeep
+!server/var/memory/.gitkeep
+
+# Go build/test output
+server/bin/
+server/dist/
+server/coverage.out
+server/*.test
+
+# macOS/editor noise
+.DS_Store
+*.swp
+*.swo

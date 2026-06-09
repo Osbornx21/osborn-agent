@@ -1,0 +1,14 @@
+{
+  "provider_output": {
+    "codec": "pcm",
+    "sample_rate_hz": 24000,
+    "channels": 1,
+    "wire": "websocket_binary"
+  },
+  "xiaozhi_downlink": {
+    "codec": "opus",
+    "sample_rate_hz": 24000,
+    "channels": 1
+  },
+  "gateway_action": "encode_provider_pcm_to_xiaozhi_raw_opus_packets; require_provider_probe_and_physical_acceptance_before_marking_xiaozhi_ready; reject_provider_opus_passthrough"
+}

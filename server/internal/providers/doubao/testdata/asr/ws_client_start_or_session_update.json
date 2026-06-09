@@ -1,0 +1,13 @@
+{
+  "type": "transcription_session.update",
+  "session": {
+    "input_audio_format": "pcm",
+    "input_audio_codec": "raw",
+    "input_audio_sample_rate": 16000,
+    "input_audio_bits": 16,
+    "input_audio_channel": 1,
+    "input_audio_transcription": {
+      "model": "bigmodel"
+    }
+  }
+}

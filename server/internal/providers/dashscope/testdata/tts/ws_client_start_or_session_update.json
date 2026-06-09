@@ -1,0 +1,24 @@
+{
+  "header": {
+    "action": "run-task",
+    "task_id": "task_fixture_dashscope_tts",
+    "streaming": "duplex"
+  },
+  "payload": {
+    "task_group": "audio",
+    "task": "tts",
+    "function": "SpeechSynthesizer",
+    "model": "cosyvoice-v3-flash",
+    "parameters": {
+      "text_type": "PlainText",
+      "voice": "longanyang",
+      "format": "pcm",
+      "sample_rate": 24000,
+      "volume": 50,
+      "rate": 1,
+      "pitch": 1,
+      "enable_ssml": false
+    },
+    "input": {}
+  }
+}

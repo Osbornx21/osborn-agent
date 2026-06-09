@@ -1,0 +1,3 @@
+data: {"id":"doubao-fixture-llm-001","object":"chat.completion.chunk","created":1780000001,"model":"ep-fixture-doubao-low-latency","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}]}
+
+data: [DONE]

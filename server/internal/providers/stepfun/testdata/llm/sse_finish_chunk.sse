@@ -1,0 +1,3 @@
+data: {"id":"stepfun-fixture-llm-001","object":"chat.completion.chunk","created":1780000001,"model":"step-3.7-flash","choices":[{"index":0,"delta":{"role":"","content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":8,"completion_tokens":2,"total_tokens":10}}
+
+data: [DONE]

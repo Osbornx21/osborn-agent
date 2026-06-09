@@ -1,0 +1,6 @@
+{
+  "type": "response.audio.delta",
+  "event_id": "event_fixture_004",
+  "item_id": "item_fixture_001",
+  "delta": "<base64_audio_delta>"
+}

@@ -1,0 +1,8 @@
+{
+  "type": "error",
+  "error": {
+    "type": "overloaded_error",
+    "message": "<redacted overload failure>"
+  },
+  "request_id": "req_fixture"
+}

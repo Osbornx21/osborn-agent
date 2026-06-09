@@ -1,0 +1,11 @@
+{
+  "model": "moonshot-v1-8k",
+  "stream": true,
+  "messages": [
+    {
+      "role": "user",
+      "content": "hello"
+    }
+  ],
+  "max_completion_tokens": 160
+}

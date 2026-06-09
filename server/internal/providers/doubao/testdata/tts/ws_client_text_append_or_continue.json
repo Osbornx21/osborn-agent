@@ -1,0 +1,5 @@
+{
+  "type": "input_text.append",
+  "event_id": "event_fixture_001",
+  "delta": "Hello."
+}

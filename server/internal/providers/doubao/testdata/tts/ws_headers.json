@@ -1,0 +1,4 @@
+{
+  "Authorization": "Bearer <DOUBAO_VOICE_API_KEY>",
+  "X-Api-Resource-Id": "<OPTIONAL_RESOURCE_ID>"
+}

@@ -1,0 +1,9 @@
+{
+  "session_id": "session_fixture",
+  "event": "connected_success",
+  "trace_id": "trace_fixture",
+  "base_resp": {
+    "status_code": 0,
+    "status_msg": "success"
+  }
+}

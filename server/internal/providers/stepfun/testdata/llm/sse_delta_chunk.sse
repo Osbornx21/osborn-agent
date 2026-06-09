@@ -1,0 +1,1 @@
+data: {"id":"stepfun-fixture-llm-001","object":"chat.completion.chunk","created":1780000000,"model":"step-3.7-flash","choices":[{"index":0,"delta":{"content":"."},"finish_reason":null}]}

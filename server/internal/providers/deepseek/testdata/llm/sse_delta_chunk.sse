@@ -1,0 +1,1 @@
+data: {"id":"deepseek-fixture-llm-001","object":"chat.completion.chunk","created":1780000000,"model":"deepseek-v4-flash","choices":[{"index":0,"delta":{"content":"."},"finish_reason":null,"logprobs":null}],"usage":null}

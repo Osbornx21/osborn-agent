@@ -1,0 +1,29 @@
+diff --git a/firmware/main/Kconfig.projbuild b/firmware/main/Kconfig.projbuild
+index d70bb58..de77132 100644
+--- a/firmware/main/Kconfig.projbuild
++++ b/firmware/main/Kconfig.projbuild
+@@ -762,3 +762,12 @@ config WAKE_WORD_DETECTION_IN_LISTENING
+-config USE_AUDIO_PROCESSOR
++config A21_AIR_DISABLE_STACKCHAN_SPEAKING_MOTION
++    bool "A21 Air: disable StackChan speaking head micro-motion"
++    default y
++    depends on BOARD_TYPE_M5STACK_STACK_CHAN
++    help
++        Keep the official StackChan mouth/expression animation while speaking,
++        but suppress the random head micro-motion that conflicts with gateway
++        body cues and can feel unnatural on the physical A21 Air unit.
++
++config USE_AUDIO_PROCESSOR
+     bool "Enable Audio Noise Reduction"
+     default y
+diff --git a/firmware/sdkconfig.defaults b/firmware/sdkconfig.defaults
+index c1ef190..fb1c921 100644
+--- a/firmware/sdkconfig.defaults
++++ b/firmware/sdkconfig.defaults
+@@ -21,5 +21,6 @@ CONFIG_CUSTOM_WAKE_WORD_THRESHOLD=20
+ # CONFIG_WAKE_WORD_DETECTION_IN_LISTENING is not set
+ # CONFIG_SR_MN_CN_NONE is not set
+ CONFIG_SR_MN_CN_MULTINET7_QUANT=y
++CONFIG_A21_AIR_DISABLE_STACKCHAN_SPEAKING_MOTION=y
+ CONFIG_COMPILER_OPTIMIZATION_SIZE=y
+ CONFIG_COMPILER_CXX_EXCEPTIONS=y

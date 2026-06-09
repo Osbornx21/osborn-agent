@@ -1,0 +1,4 @@
+{
+  "Authorization": "Bearer <DASHSCOPE_API_KEY>",
+  "X-DashScope-WorkSpace": "<OPTIONAL_WORKSPACE_ID>"
+}

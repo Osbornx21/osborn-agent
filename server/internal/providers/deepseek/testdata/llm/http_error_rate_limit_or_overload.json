@@ -1,0 +1,7 @@
+{
+  "http_status": 429,
+  "error": {
+    "message": "<redacted rate limit failure>",
+    "type": "rate_limit_error"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "model": "ep-fixture-doubao-low-latency",
+  "stream": true,
+  "messages": [
+    {
+      "role": "user",
+      "content": "Say hello in one short sentence."
+    }
+  ]
+}

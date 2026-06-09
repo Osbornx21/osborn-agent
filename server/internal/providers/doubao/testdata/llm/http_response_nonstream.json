@@ -1,0 +1,16 @@
+{
+  "id": "doubao-fixture-llm-001",
+  "object": "chat.completion",
+  "created": 1780000000,
+  "model": "ep-fixture-doubao-low-latency",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Hello."
+      },
+      "finish_reason": "stop"
+    }
+  ]
+}

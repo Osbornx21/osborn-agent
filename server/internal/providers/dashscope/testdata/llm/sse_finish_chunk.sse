@@ -1,0 +1,3 @@
+data: {"id":"dashscope-fixture-llm-001","object":"chat.completion.chunk","created":1780000001,"model":"qwen3.6-plus","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}]}
+
+data: [DONE]

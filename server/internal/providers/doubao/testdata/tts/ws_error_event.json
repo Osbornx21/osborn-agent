@@ -1,0 +1,5 @@
+{
+  "type": "error",
+  "code": "InvalidRequest",
+  "message": "<redacted realtime tts failure>"
+}

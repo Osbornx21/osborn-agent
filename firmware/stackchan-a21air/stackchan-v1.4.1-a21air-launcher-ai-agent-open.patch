@@ -1,0 +1,120 @@
+diff --git a/firmware/main/Kconfig.projbuild b/firmware/main/Kconfig.projbuild
+index adf9905..6d81172 100644
+--- a/firmware/main/Kconfig.projbuild
++++ b/firmware/main/Kconfig.projbuild
+@@ -751,6 +751,21 @@ config A21_AIR_DISABLE_STACKCHAN_SPEAKING_MOTION
+         but suppress the random head micro-motion that conflicts with gateway
+         body cues and can feel unnatural on the physical A21 Air unit.
+ 
++config A21_AIR_OPEN_AI_AGENT_FROM_LAUNCHER
++    bool "A21 Air: open AI.Agent from the official launcher after boot"
++    default y
++    depends on BOARD_TYPE_M5STACK_STACK_CHAN
++    help
++        Let the official launcher open the AI.Agent app after the launcher UI
++        has settled. This uses Mooncake AppLauncherBase::openApp() and
++        AppAiAgent::onOpen(), instead of directly requesting Xiaozhi runtime
++        start from main.cpp.
++
++config A21_AIR_OPEN_AI_AGENT_DELAY_MS
++    int "A21 Air AI.Agent launcher-open delay (ms)"
++    default 3000
++    depends on A21_AIR_OPEN_AI_AGENT_FROM_LAUNCHER
++
+ config USE_AUDIO_PROCESSOR
+     bool "Enable Audio Noise Reduction"
+     default y
+diff --git a/firmware/main/apps/app_launcher/app_launcher.cpp b/firmware/main/apps/app_launcher/app_launcher.cpp
+index e1e3d20..f888b9e 100644
+--- a/firmware/main/apps/app_launcher/app_launcher.cpp
++++ b/firmware/main/apps/app_launcher/app_launcher.cpp
+@@ -9,6 +9,7 @@
+ #include <mooncake_log.h>
+ #include <stackchan/stackchan.h>
+ #include <cstdint>
++#include <sdkconfig.h>
+ 
+ using namespace mooncake;
+ 
+@@ -48,6 +49,9 @@ void AppLauncher::onLauncherRunning()
+     } else {
+         _view->update();
+         screensaver_update();
++#if CONFIG_A21_AIR_OPEN_AI_AGENT_FROM_LAUNCHER
++        auto_open_ai_agent_update();
++#endif
+     }
+ 
+     GetStackChan().update();
+@@ -75,8 +79,33 @@ void AppLauncher::create_launcher_view()
+         mclog::tagInfo(getAppInfo().name, "handle open app, app id: {}", appID);
+         openApp(appID);
+     };
++#if CONFIG_A21_AIR_OPEN_AI_AGENT_FROM_LAUNCHER
++    _auto_open_ai_agent_deadline = GetHAL().millis() + CONFIG_A21_AIR_OPEN_AI_AGENT_DELAY_MS;
++    _auto_open_ai_agent_requested = false;
++#endif
+ }
+ 
++#if CONFIG_A21_AIR_OPEN_AI_AGENT_FROM_LAUNCHER
++void AppLauncher::auto_open_ai_agent_update()
++{
++    if (_auto_open_ai_agent_requested || _auto_open_ai_agent_deadline == 0 ||
++        GetHAL().millis() < _auto_open_ai_agent_deadline) {
++        return;
++    }
++    _auto_open_ai_agent_requested = true;
++
++    for (const auto& props : getAppProps()) {
++        if (props.info.name == "AI.AGENT") {
++            mclog::tagInfo(getAppInfo().name, "A21 Air auto open AI.AGENT, app id: {}", props.appID);
++            openApp(props.appID);
++            return;
++        }
++    }
++
++    mclog::tagWarn(getAppInfo().name, "A21 Air auto open AI.AGENT skipped: app not found");
++}
++#endif
++
+ void AppLauncher::screensaver_update()
+ {
+     const uint32_t SCREENSAVER_TIMEOUT_MS = 30000;
+diff --git a/firmware/main/apps/app_launcher/app_launcher.h b/firmware/main/apps/app_launcher/app_launcher.h
+index c62cca7..41c991b 100644
+--- a/firmware/main/apps/app_launcher/app_launcher.h
++++ b/firmware/main/apps/app_launcher/app_launcher.h
+@@ -10,6 +10,7 @@
+ #include <mooncake_templates.h>
+ #include <cstdint>
+ #include <memory>
++#include <sdkconfig.h>
+ 
+ class AppLauncher : public mooncake::templates::AppLauncherBase {
+ public:
+@@ -26,6 +27,12 @@ private:
+     uint32_t _screensaver_timecount = 0;
+     bool _startup_checked           = false;
+ 
++#if CONFIG_A21_AIR_OPEN_AI_AGENT_FROM_LAUNCHER
++    uint32_t _auto_open_ai_agent_deadline = 0;
++    bool _auto_open_ai_agent_requested    = false;
++    void auto_open_ai_agent_update();
++#endif
++
+     void create_launcher_view();
+     void screensaver_update();
+ };
+diff --git a/firmware/sdkconfig.defaults b/firmware/sdkconfig.defaults
+index 6644039..12bfa68 100644
+--- a/firmware/sdkconfig.defaults
++++ b/firmware/sdkconfig.defaults
+@@ -22,6 +22,8 @@ CONFIG_CUSTOM_WAKE_WORD_THRESHOLD=20
+ # CONFIG_SR_MN_CN_NONE is not set
+ CONFIG_SR_MN_CN_MULTINET7_QUANT=y
+ CONFIG_A21_AIR_DISABLE_STACKCHAN_SPEAKING_MOTION=y
++CONFIG_A21_AIR_OPEN_AI_AGENT_FROM_LAUNCHER=y
++CONFIG_A21_AIR_OPEN_AI_AGENT_DELAY_MS=3000
+ CONFIG_COMPILER_OPTIMIZATION_SIZE=y
+ CONFIG_COMPILER_CXX_EXCEPTIONS=y
+ CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE=1024

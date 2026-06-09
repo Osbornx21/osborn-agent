@@ -1,0 +1,434 @@
+server:
+  public_base_url: "https://stackchan.example.internal"
+  listen_addr: "127.0.0.1:8080"
+  websocket_path: "/xiaozhi/v1/ws"
+  ota_path: "/xiaozhi/ota/"
+  websocket_public_url_env: "STACKCHAN_WEBSOCKET_URL"
+  websocket_version: 1
+  admin_addr: "127.0.0.1:8081"
+  admin_token_env: "STACKCHAN_ADMIN_TOKEN"
+  metrics_addr: "127.0.0.1:9090"
+  shutdown_timeout_ms: 5000
+
+devices:
+  - device_id: "stackchan-s3-main"
+    client_id: "stackchan-s3-main-client"
+    auth_token_env: "STACKCHAN_MAIN_AUTH_TOKEN"
+    default_mode: "auto"
+    allow_mcp_tools:
+      - "self.robot.get_head_angles"
+      - "self.robot.set_led_color"
+      - "self.get_device_status"
+      - "self.audio_speaker.set_volume"
+      - "self.screen.set_brightness"
+      - "self.screen.set_theme"
+      - "self.screen.set_scene"
+
+audio:
+  uplink_sample_rate_hz: 16000
+  downlink_sample_rate_hz: 24000
+  channels: 1
+  frame_duration_ms: 60
+  downlink_queue_ms: 1200
+  max_turn_ms: 30000
+
+providers:
+  default_profile: "siliconflow-dashscope-voice"
+  auto_fallback:
+    enabled: false
+    yellow_first_audio_ms: 3000
+    consecutive_yellow: 3
+    consecutive_errors: 2
+    profiles:
+      - "dashscope-cosyvoice"
+  profiles:
+    siliconflow-dashscope-voice:
+      asr: "dashscope-asr"
+      llm: "siliconflow-llm"
+      tts: "dashscope-tts"
+    cn-low-latency-cascade:
+      asr: "mock"
+      llm: "mock"
+      tts: "mock"
+    dashscope-cosyvoice:
+      asr: "dashscope-asr"
+      llm: "dashscope-llm"
+      tts: "dashscope-tts"
+    doubao-dashscope-voice:
+      asr: "dashscope-asr"
+      llm: "doubao-llm"
+      tts: "dashscope-tts"
+    minimax-dashscope-voice:
+      asr: "dashscope-asr"
+      llm: "minimax-llm"
+      tts: "dashscope-tts"
+    deepseek-dashscope-voice:
+      asr: "dashscope-asr"
+      llm: "deepseek-llm"
+      tts: "dashscope-tts"
+    moonshot-dashscope-voice:
+      asr: "dashscope-asr"
+      llm: "moonshot-llm"
+      tts: "dashscope-tts"
+    dashscope-llm:
+      asr: ""
+      llm: "dashscope-llm"
+      tts: ""
+    doubao-llm:
+      asr: ""
+      llm: "doubao-llm"
+      tts: ""
+    doubao-tts:
+      asr: ""
+      llm: "doubao-llm"
+      tts: "doubao-tts"
+    minimax-llm:
+      asr: ""
+      llm: "minimax-llm"
+      tts: ""
+    minimax-tts:
+      asr: ""
+      llm: "minimax-llm"
+      tts: "minimax-tts-ws"
+    stepfun-llm:
+      asr: ""
+      llm: "stepfun-llm"
+      tts: ""
+    siliconflow-llm:
+      asr: ""
+      llm: "siliconflow-llm"
+      tts: ""
+    moonshot-llm:
+      asr: ""
+      llm: "moonshot-llm"
+      tts: ""
+    deepseek-llm:
+      asr: ""
+      llm: "deepseek-llm"
+      tts: ""
+    claude-dashscope-tts:
+      asr: ""
+      llm: "anthropic-llm"
+      tts: "dashscope-tts"
+
+agent:
+  default_mode: "casual"
+  persona_path: "./configs/persona.stackchan.yaml"
+  memory_db_path: "./var/memory/stackchan-memory.sqlite3"
+  memory_max_items: 5
+  recent_turns: 8
+  v21:
+    enabled: false
+    base_url_env: "V21_ADAPTER_URL"
+    token_env: "V21_ADAPTER_TOKEN"
+    allowed_collection_ids: []
+    timeout_ms: 1500
+    max_spoken_chars: 180
+  hermes:
+    enabled: false
+    base_url_env: "HERMES_AGENT_URL"
+    token_env: "HERMES_AGENT_KEY"
+    timeout_ms: 1500
+    max_spoken_chars: 180
+    allowed_tool_intents:
+      - "memory.lookup"
+    max_tool_intents: 1
+    max_runtime_routes_per_minute: 12
+    max_runtime_input_chars: 360
+    max_runtime_errors_before_cooldown: 2
+    runtime_error_cooldown_ms: 30000
+  openclaw:
+    enabled: false
+    base_url_env: "OPENCLAW_WS_URL"
+    token_env: "OPENCLAW_AGENT_TOKEN"
+    timeout_ms: 1500
+    max_spoken_chars: 180
+    allowed_tool_intents:
+      - "memory.lookup"
+      - "homeassistant.get_state"
+      - "search.web"
+    max_tool_intents: 2
+    max_runtime_routes_per_minute: 12
+    max_runtime_input_chars: 360
+    max_runtime_errors_before_cooldown: 2
+    runtime_error_cooldown_ms: 30000
+
+tools:
+  tool_followup:
+    enabled: true
+    max_results: 3
+    max_result_bytes: 2048
+    allow_tool_calls: false
+    max_tool_calls: 1
+    allowed_tools:
+      - "memory.lookup"
+      - "homeassistant.get_state"
+      - "search.web"
+  home_assistant:
+    enabled: false
+    base_url: ""
+    token_env: "HOME_ASSISTANT_TOKEN"
+    allowed_entities: []
+    allowed_actions: []
+    timeout_ms: 1200
+  search:
+    enabled: false
+    base_url_env: "SEARCH_ADAPTER_URL"
+    token_env: "SEARCH_ADAPTER_TOKEN"
+    allowed_domains: []
+    timeout_ms: 1500
+    max_results: 3
+    max_query_chars: 160
+  feishu:
+    enabled: false
+    base_url: "https://open.feishu.cn"
+    app_id_env: "FEISHU_APP_ID"
+    app_secret_env: "FEISHU_APP_SECRET"
+    allowed_targets: []
+    timeout_ms: 1500
+    max_text_chars: 240
+  camera:
+    enabled: false
+    max_reason_chars: 120
+  reminder:
+    enabled: false
+    max_title_chars: 80
+    max_message_chars: 240
+
+stackchan:
+  body:
+    min_command_gap_ms: 320
+    max_commands_per_turn: 6
+    listen_start_motion_enabled: false
+    yaw_min_deg: -45
+    yaw_max_deg: 45
+    pitch_min_deg: 0
+    pitch_max_deg: 45
+    default_speed: 150
+    lifecycle_leds:
+      listening:
+        r: 0
+        g: 168
+        b: 0
+      thinking:
+        r: 168
+        g: 112
+        b: 0
+      speaking:
+        r: 0
+        g: 0
+        b: 168
+      idle:
+        r: 0
+        g: 0
+        b: 0
+  display:
+    scene_ttl_ms: 1800
+    max_caption_chars: 48
+    lifecycle_scenes:
+      listening:
+        caption: "我在听。"
+        emotion: "curious"
+        accent: "cyan"
+        motion:
+          preset: "attentive"
+          intensity: 0.35
+      thinking:
+        caption: "我在想。"
+        emotion: "curious"
+        accent: "amber"
+        motion:
+          preset: "attentive"
+          intensity: 0.25
+      speaking:
+        caption: "我在说。"
+        emotion: "warm"
+        accent: "green"
+        motion:
+          preset: "nod_soft"
+          intensity: 0.3
+      idle:
+        caption: ""
+        emotion: "neutral"
+        accent: "default"
+    event_scenes:
+      agent_mode.casual:
+        scene: "idle"
+        caption: "日常模式。"
+        emotion: "neutral"
+        accent: "default"
+      agent_mode.professional:
+        scene: "tool"
+        caption: "专业模式。"
+        emotion: "ready"
+        accent: "amber"
+        motion:
+          preset: "attentive"
+          intensity: 0.25
+      agent_mode.roleplay:
+        scene: "speaking"
+        caption: "角色模式。"
+        emotion: "warm"
+        accent: "green"
+        motion:
+          preset: "nod_soft"
+          intensity: 0.2
+      agent_mode.tool:
+        scene: "tool"
+        caption: "工具模式。"
+        emotion: "ready"
+        accent: "cyan"
+        motion:
+          preset: "attentive"
+          intensity: 0.3
+      tool.running:
+        scene: "tool"
+        caption: "我在调用工具。"
+        emotion: "ready"
+        accent: "green"
+        motion:
+          preset: "attentive"
+          intensity: 0.3
+      tool.succeeded:
+        scene: "tool"
+        caption: "工具完成。"
+        emotion: "happy"
+        accent: "green"
+        motion:
+          preset: "nod_soft"
+          intensity: 0.2
+      tool.failed:
+        scene: "error"
+        caption: "工具失败。"
+        emotion: "error"
+        accent: "red"
+        motion:
+          preset: "attentive"
+          intensity: 0.25
+      homeassistant.state:
+        scene: "tool"
+        caption: "我看下设备。"
+        emotion: "curious"
+        accent: "cyan"
+        motion:
+          preset: "attentive"
+          intensity: 0.25
+      homeassistant.action:
+        scene: "tool"
+        caption: "我在控制设备。"
+        emotion: "ready"
+        accent: "green"
+        motion:
+          preset: "nod_soft"
+          intensity: 0.25
+      search.web:
+        scene: "tool"
+        caption: "我去搜索。"
+        emotion: "curious"
+        accent: "amber"
+        motion:
+          preset: "attentive"
+          intensity: 0.25
+      memory.updated:
+        scene: "tool"
+        caption: "我记住了。"
+        emotion: "happy"
+        accent: "green"
+        motion:
+          preset: "nod_soft"
+          intensity: 0.25
+      camera.capturing:
+        scene: "tool"
+        caption: "我看一眼。"
+        emotion: "curious"
+        accent: "cyan"
+        motion:
+          preset: "attentive"
+          intensity: 0.25
+      reminder.due:
+        scene: "tool"
+        caption: "提醒到了。"
+        emotion: "ready"
+        accent: "amber"
+        motion:
+          preset: "attentive"
+          intensity: 0.35
+      agent_route.openclaw:
+        scene: "tool"
+        caption: "我在调度工具脑。"
+        emotion: "ready"
+        accent: "cyan"
+        motion:
+          preset: "attentive"
+          intensity: 0.3
+      agent_route.hermes:
+        scene: "speaking"
+        caption: "我进入角色回应。"
+        emotion: "warm"
+        accent: "green"
+        motion:
+          preset: "nod_soft"
+          intensity: 0.25
+      agent_route.v21:
+        scene: "tool"
+        caption: "我去查知识库。"
+        emotion: "ready"
+        accent: "amber"
+        motion:
+          preset: "attentive"
+          intensity: 0.3
+      agent_route.claude:
+        scene: "thinking"
+        caption: "我在请教 Claude。"
+        emotion: "curious"
+        accent: "amber"
+        motion:
+          preset: "attentive"
+          intensity: 0.25
+      agent_route.skipped:
+        scene: "tool"
+        caption: "我先用普通对话。"
+        emotion: "curious"
+        accent: "amber"
+        motion:
+          preset: "nod_soft"
+          intensity: 0.2
+    cards:
+      status.note:
+        scene: "tool"
+        caption: "我有一条状态。"
+        emotion: "warm"
+        accent: "green"
+        allow_caption: true
+        max_caption_chars: 28
+        motion:
+          preset: "nod_soft"
+          intensity: 0.2
+  expression:
+    provider_tools_enabled: false
+    event_cues: {}
+    sequences:
+      agree.quick:
+        cues: ["attentive", "nod"]
+    cues:
+      nod:
+        motion:
+          yaw_deg: 0
+          pitch_deg: 16
+          speed: 220
+        led:
+          r: 0
+          g: 168
+          b: 96
+        scene:
+          scene: "speaking"
+          caption: "我点头。"
+          emotion: "ready"
+          accent: "green"
+          motion:
+            preset: "nod_soft"
+            intensity: 0.35
+
+observability:
+  trace_jsonl_path: "./var/traces/turns.jsonl"
+  redact_secrets: true

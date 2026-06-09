@@ -1,0 +1,21 @@
+{
+  "id": "minimax-fixture-llm-001",
+  "object": "chat.completion",
+  "created": 1780000000,
+  "model": "MiniMax-M3",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Hello.",
+        "audio_content": ""
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "base_resp": {
+    "status_code": 0,
+    "status_msg": "success"
+  }
+}

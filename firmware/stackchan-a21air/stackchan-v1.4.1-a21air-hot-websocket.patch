@@ -1,0 +1,200 @@
+diff --git a/firmware/main/Kconfig.projbuild b/firmware/main/Kconfig.projbuild
+index 304e48d..d70bb58 100644
+--- a/firmware/main/Kconfig.projbuild
++++ b/firmware/main/Kconfig.projbuild
+@@ -734,0 +735,18 @@ config SEND_WAKE_WORD_DATA
++config A21_AIR_KEEP_WEBSOCKET_CONNECTED
++    bool "A21 Air: keep Xiaozhi WebSocket connected while idle"
++    default n
++    depends on BOARD_TYPE_M5STACK_STACK_CHAN
++    help
++        Open and maintain the Xiaozhi WebSocket audio channel in the background
++        while the device is idle. This only sends the protocol hello and keeps
++        the cloud session warm; it does not start listening or upload microphone
++        audio until the normal Xiaozhi wake/touch listening path runs.
++
++config A21_AIR_WEBSOCKET_RECONNECT_INTERVAL_MS
++    int "A21 Air Xiaozhi WebSocket reconnect interval (ms)"
++    default 5000
++    range 1000 60000
++    depends on A21_AIR_KEEP_WEBSOCKET_CONNECTED
++    help
++        Retry interval for the A21 Air idle hot WebSocket reconnect loop.
++
+diff --git a/firmware/sdkconfig.defaults b/firmware/sdkconfig.defaults
+index d0cea7d..eb546d4 100644
+--- a/firmware/sdkconfig.defaults
++++ b/firmware/sdkconfig.defaults
+@@ -12,0 +13,2 @@ CONFIG_SEND_WAKE_WORD_DATA=y
++CONFIG_A21_AIR_KEEP_WEBSOCKET_CONNECTED=y
++CONFIG_A21_AIR_WEBSOCKET_RECONNECT_INTERVAL_MS=5000
+diff --git a/firmware/partitions.csv b/firmware/partitions.csv
+index c7ceccd..f62ac0d 100644
+--- a/firmware/partitions.csv
++++ b/firmware/partitions.csv
+@@ -5,5 +5,5 @@ phy_init, data, phy,     0xf000,    0x1000,
+ phy_init, data, phy,     0xf000,    0x1000,
+ ota_0,    app,  ota_0,   0x20000,   0x4f0000,
+ ota_1,    app,  ota_1,   ,          0x4f0000,
+-assets,   data, spiffs,  0xA00000,  4M,
++assets,   data, spiffs,  0xA00000,  5M,
+ coredump, data, coredump,,          0x10000,
+diff --git a/firmware/xiaozhi-esp32/main/application.cc b/firmware/xiaozhi-esp32/main/application.cc
+index d69d43d..3c88948 100644
+--- a/firmware/xiaozhi-esp32/main/application.cc
++++ b/firmware/xiaozhi-esp32/main/application.cc
+@@ -46,0 +47,14 @@ Application::Application() {
++
++#if CONFIG_A21_AIR_KEEP_WEBSOCKET_CONNECTED
++    esp_timer_create_args_t websocket_reconnect_timer_args = {
++        .callback = [](void* arg) {
++            Application* app = (Application*)arg;
++            xEventGroupSetBits(app->event_group_, MAIN_EVENT_WEBSOCKET_RECONNECT);
++        },
++        .arg = this,
++        .dispatch_method = ESP_TIMER_TASK,
++        .name = "a21_ws_reconnect",
++        .skip_unhandled_events = true
++    };
++    esp_timer_create(&websocket_reconnect_timer_args, &websocket_reconnect_timer_handle_);
++#endif
+@@ -53,0 +68,6 @@ Application::~Application() {
++#if CONFIG_A21_AIR_KEEP_WEBSOCKET_CONNECTED
++    if (websocket_reconnect_timer_handle_ != nullptr) {
++        esp_timer_stop(websocket_reconnect_timer_handle_);
++        esp_timer_delete(websocket_reconnect_timer_handle_);
++    }
++#endif
+@@ -182 +202,5 @@ void Application::Run() {
+-        MAIN_EVENT_STATE_CHANGED;
++        MAIN_EVENT_STATE_CHANGED
++#if CONFIG_A21_AIR_KEEP_WEBSOCKET_CONNECTED
++        | MAIN_EVENT_WEBSOCKET_RECONNECT
++#endif
++        ;
+@@ -191,0 +216,6 @@ void Application::Run() {
++#if CONFIG_A21_AIR_KEEP_WEBSOCKET_CONNECTED
++        if (bits & MAIN_EVENT_WEBSOCKET_RECONNECT) {
++            HandleWebsocketReconnectEvent();
++        }
++#endif
++
+@@ -262,0 +293,3 @@ void Application::HandleNetworkConnectedEvent() {
++#if CONFIG_A21_AIR_KEEP_WEBSOCKET_CONNECTED
++    network_connected_ = true;
++#endif
+@@ -283,0 +317,4 @@ void Application::HandleNetworkConnectedEvent() {
++
++#if CONFIG_A21_AIR_KEEP_WEBSOCKET_CONNECTED
++    ScheduleWebsocketReconnect(1000);
++#endif
+@@ -287,0 +325,4 @@ void Application::HandleNetworkDisconnectedEvent() {
++#if CONFIG_A21_AIR_KEEP_WEBSOCKET_CONNECTED
++    network_connected_ = false;
++    CancelWebsocketReconnect();
++#endif
+@@ -298,0 +340,54 @@ void Application::HandleNetworkDisconnectedEvent() {
++#if CONFIG_A21_AIR_KEEP_WEBSOCKET_CONNECTED
++void Application::ScheduleWebsocketReconnect(int delay_ms) {
++    if (websocket_reconnect_timer_handle_ == nullptr || !network_connected_ || protocol_ == nullptr) {
++        return;
++    }
++    if (delay_ms < 1000) {
++        delay_ms = 1000;
++    }
++    esp_timer_stop(websocket_reconnect_timer_handle_);
++    esp_timer_start_once(websocket_reconnect_timer_handle_, (uint64_t)delay_ms * 1000);
++}
++
++void Application::CancelWebsocketReconnect() {
++    if (websocket_reconnect_timer_handle_ != nullptr) {
++        esp_timer_stop(websocket_reconnect_timer_handle_);
++    }
++}
++
++void Application::HandleWebsocketReconnectEvent() {
++    if (!network_connected_ || protocol_ == nullptr) {
++        return;
++    }
++
++    if (protocol_->IsAudioChannelOpened()) {
++        ScheduleWebsocketReconnect(CONFIG_A21_AIR_WEBSOCKET_RECONNECT_INTERVAL_MS);
++        return;
++    }
++
++    if (GetDeviceState() != kDeviceStateIdle) {
++        ScheduleWebsocketReconnect(CONFIG_A21_AIR_WEBSOCKET_RECONNECT_INTERVAL_MS);
++        return;
++    }
++
++    ESP_LOGI(TAG, "Opening A21 Air hot Xiaozhi websocket");
++    SetDeviceState(kDeviceStateConnecting);
++    bool opened = protocol_->OpenAudioChannel();
++    if (opened) {
++        ESP_LOGI(TAG, "A21 Air hot Xiaozhi websocket connected");
++    } else {
++        ESP_LOGW(TAG, "A21 Air hot Xiaozhi websocket reconnect failed; retrying");
++    }
++
++    SetDeviceState(kDeviceStateIdle);
++    if (!opened) {
++        if (protocol_) {
++            protocol_->CloseAudioChannel(false);
++        }
++        ScheduleWebsocketReconnect(CONFIG_A21_AIR_WEBSOCKET_RECONNECT_INTERVAL_MS);
++    } else {
++        ScheduleWebsocketReconnect(CONFIG_A21_AIR_WEBSOCKET_RECONNECT_INTERVAL_MS);
++    }
++}
++#endif
++
+@@ -320,0 +409,4 @@ void Application::HandleActivationDoneEvent() {
++
++#if CONFIG_A21_AIR_KEEP_WEBSOCKET_CONNECTED
++    ScheduleWebsocketReconnect(1000);
++#endif
+@@ -508,4 +607,7 @@ void Application::InitializeProtocol() {
+             ESP_LOGW(TAG, "Server sample rate %d does not match device output sample rate %d, resampling may cause distortion",
+                 protocol_->server_sample_rate(), codec->output_sample_rate());
+         }
++#if CONFIG_A21_AIR_KEEP_WEBSOCKET_CONNECTED
++        ScheduleWebsocketReconnect(CONFIG_A21_AIR_WEBSOCKET_RECONNECT_INTERVAL_MS);
++#endif
+     });
+@@ -514,4 +610,7 @@ void Application::InitializeProtocol() {
+             auto display = Board::GetInstance().GetDisplay();
+             display->SetChatMessage("system", "");
+             SetDeviceState(kDeviceStateIdle);
++#if CONFIG_A21_AIR_KEEP_WEBSOCKET_CONNECTED
++            ScheduleWebsocketReconnect(1000);
++#endif
+         });
+@@ -544,0 +640,3 @@ void Application::InitializeProtocol() {
++#if CONFIG_A21_AIR_KEEP_WEBSOCKET_CONNECTED
++            ScheduleWebsocketReconnect(CONFIG_A21_AIR_WEBSOCKET_RECONNECT_INTERVAL_MS);
++#endif
+@@ -730,2 +826,5 @@ void Application::HandleStartListeningEvent() {
+ void Application::HandleStartListeningEvent() {
++#if CONFIG_A21_AIR_KEEP_WEBSOCKET_CONNECTED
++    CancelWebsocketReconnect();
++#endif
+     auto state = GetDeviceState();
+@@ -1119 +1216,0 @@ void Application::ResetProtocol() {
+-
+diff --git a/firmware/xiaozhi-esp32/main/application.h b/firmware/xiaozhi-esp32/main/application.h
+index 7ca7af4..fb10f6e 100644
+--- a/firmware/xiaozhi-esp32/main/application.h
++++ b/firmware/xiaozhi-esp32/main/application.h
+@@ -33,0 +34 @@
++#define MAIN_EVENT_WEBSOCKET_RECONNECT  (1 << 13)
+@@ -138,0 +140,4 @@ private:
++#if CONFIG_A21_AIR_KEEP_WEBSOCKET_CONNECTED
++    esp_timer_handle_t websocket_reconnect_timer_handle_ = nullptr;
++    bool network_connected_ = false;
++#endif
+@@ -156,0 +162,5 @@ private:
++#if CONFIG_A21_AIR_KEEP_WEBSOCKET_CONNECTED
++    void ScheduleWebsocketReconnect(int delay_ms);
++    void CancelWebsocketReconnect();
++    void HandleWebsocketReconnectEvent();
++#endif

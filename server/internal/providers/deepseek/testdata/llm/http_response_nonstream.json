@@ -1,0 +1,16 @@
+{
+  "id": "deepseek-fixture-llm-001",
+  "object": "chat.completion",
+  "created": 1780000000,
+  "model": "deepseek-v4-flash",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Hello."
+      },
+      "finish_reason": "stop"
+    }
+  ]
+}

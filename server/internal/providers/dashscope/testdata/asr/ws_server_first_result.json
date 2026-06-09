@@ -1,0 +1,20 @@
+{
+  "header": {
+    "event": "result-generated",
+    "task_id": "task_fixture_dashscope_asr",
+    "attributes": {}
+  },
+  "payload": {
+    "output": {
+      "sentence": {
+        "begin_time": 0,
+        "end_time": 480,
+        "text": "hello",
+        "heartbeat": false,
+        "sentence_end": false,
+        "sentence_id": 1
+      }
+    },
+    "usage": null
+  }
+}

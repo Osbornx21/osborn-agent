@@ -1,0 +1,9 @@
+{
+  "session_id": "session_fixture",
+  "event": "task_failed",
+  "trace_id": "trace_fixture",
+  "base_resp": {
+    "status_code": 1004,
+    "status_msg": "<redacted task failure>"
+  }
+}

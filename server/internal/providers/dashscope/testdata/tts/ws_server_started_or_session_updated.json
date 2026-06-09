@@ -1,0 +1,8 @@
+{
+  "header": {
+    "event": "task-started",
+    "task_id": "task_fixture_dashscope_tts",
+    "attributes": {}
+  },
+  "payload": {}
+}

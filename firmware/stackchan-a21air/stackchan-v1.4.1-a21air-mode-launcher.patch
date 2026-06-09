@@ -1,0 +1,473 @@
+diff --git a/firmware/main/apps/app_a21_mode/app_a21_mode.cpp b/firmware/main/apps/app_a21_mode/app_a21_mode.cpp
+new file mode 100644
+index 0000000..7f340b9
+--- /dev/null
++++ b/firmware/main/apps/app_a21_mode/app_a21_mode.cpp
+@@ -0,0 +1,380 @@
++/*
++ * SPDX-FileCopyrightText: 2026 M5Stack Technology CO LTD
++ *
++ * SPDX-License-Identifier: MIT
++ */
++#include "app_a21_mode.h"
++#include <apps/common/common.h>
++#include <assets/assets.h>
++#include <board.h>
++#include <cJSON.h>
++#include <hal/hal.h>
++#include <mooncake.h>
++#include <mooncake_log.h>
++#include <settings.h>
++#include <smooth_lvgl.hpp>
++#include <system_info.h>
++#include <algorithm>
++#include <array>
++#include <cctype>
++#include <cstdio>
++
++using namespace mooncake;
++using namespace uitk::lvgl_cpp;
++
++namespace {
++constexpr uint32_t kBgColor = 0xEEF6F1;
++constexpr uint32_t kPanelColor = 0xD6EDE0;
++constexpr uint32_t kTextColor = 0x173A2B;
++constexpr uint32_t kMutedColor = 0x4C6B5A;
++constexpr uint32_t kActiveColor = 0x41B883;
++constexpr uint32_t kButtonColor = 0xB8DBC9;
++constexpr uint32_t kWarnColor = 0xB26A00;
++constexpr uint32_t kErrorColor = 0xA33A3A;
++
++struct ModeOption {
++    const char* label;
++    const char* mode;
++};
++
++const std::array<ModeOption, 4> kModes = {{
++    {"AI.Agent", "casual"},
++    {"Hermes", "roleplay"},
++    {"OpenClaw", "tool"},
++    {"Pro", "professional"},
++}};
++
++std::string trim_copy(std::string value)
++{
++    auto not_space = [](unsigned char ch) { return !std::isspace(ch); };
++    value.erase(value.begin(), std::find_if(value.begin(), value.end(), not_space));
++    value.erase(std::find_if(value.rbegin(), value.rend(), not_space).base(), value.end());
++    return value;
++}
++
++std::string json_string_value(cJSON* root, const char* key)
++{
++    auto item = cJSON_GetObjectItem(root, key);
++    if (cJSON_IsString(item) && item->valuestring != nullptr) {
++        return item->valuestring;
++    }
++    return {};
++}
++}  // namespace
++
++AppA21Mode::AppA21Mode()
++{
++    setAppInfo().name = "A21.MODE";
++    static auto icon = assets::get_image("icon_ai_agent.bin");
++    if (icon.data_size != 0) {
++        setAppInfo().icon = (void*)&icon;
++    }
++    static uint32_t theme_color = kActiveColor;
++    setAppInfo().userData = (void*)&theme_color;
++}
++
++void AppA21Mode::onCreate()
++{
++    mclog::tagInfo(getAppInfo().name, "on create");
++}
++
++void AppA21Mode::onOpen()
++{
++    mclog::tagInfo(getAppInfo().name, "on open");
++    {
++        LvglLockGuard lock;
++        build_ui();
++        view::create_home_indicator([&]() { close(); }, 0x94D7B5, 0x173A2B);
++        view::create_status_bar(0x94D7B5, 0x173A2B);
++    }
++    _pending_refresh = true;
++}
++
++void AppA21Mode::onRunning()
++{
++    std::string selected;
++    bool refresh = false;
++
++    {
++        LvglLockGuard lock;
++        view::update_home_indicator();
++        view::update_status_bar();
++
++        if (!_busy && !_pending_select.empty()) {
++            selected = _pending_select;
++            _pending_select.clear();
++            _busy = true;
++            update_status_text("Switching...", kMutedColor);
++        } else if (!_busy && _pending_refresh) {
++            _pending_refresh = false;
++            refresh = true;
++            _busy = true;
++            update_status_text("Refreshing...", kMutedColor);
++        }
++    }
++
++    if (!selected.empty()) {
++        select_mode(selected);
++    } else if (refresh) {
++        refresh_status();
++    }
++}
++
++void AppA21Mode::onClose()
++{
++    mclog::tagInfo(getAppInfo().name, "on close");
++    LvglLockGuard lock;
++    _mode_buttons.clear();
++    _refresh_button.reset();
++    _hint_label.reset();
++    _status_label.reset();
++    _title.reset();
++    _panel.reset();
++    view::destroy_home_indicator();
++    view::destroy_status_bar();
++}
++
++void AppA21Mode::build_ui()
++{
++    _panel = std::make_unique<Container>(lv_screen_active());
++    _panel->setSize(320, 240);
++    _panel->setAlign(LV_ALIGN_CENTER);
++    _panel->setBgColor(lv_color_hex(kBgColor));
++    _panel->setPadding(0, 0, 0, 0);
++    _panel->setRadius(0);
++    _panel->setBorderWidth(0);
++    _panel->removeFlag(LV_OBJ_FLAG_SCROLLABLE);
++
++    _title = std::make_unique<Label>(*_panel);
++    _title->setText("A21 Air Mode");
++    _title->setTextFont(&lv_font_montserrat_24);
++    _title->setTextColor(lv_color_hex(kTextColor));
++    _title->align(LV_ALIGN_TOP_MID, 0, 22);
++
++    _status_label = std::make_unique<Label>(*_panel);
++    _status_label->setText("Loading...");
++    _status_label->setTextFont(&lv_font_montserrat_16);
++    _status_label->setTextColor(lv_color_hex(kMutedColor));
++    _status_label->setWidth(300);
++    _status_label->setTextAlign(LV_TEXT_ALIGN_CENTER);
++    _status_label->setLongMode(LV_LABEL_LONG_MODE_SCROLL_CIRCULAR);
++    _status_label->align(LV_ALIGN_TOP_MID, 0, 55);
++
++    for (size_t i = 0; i < kModes.size(); ++i) {
++        const int row = static_cast<int>(i / 2);
++        const int col = static_cast<int>(i % 2);
++        auto button = std::make_unique<Button>(*_panel);
++        button->setSize(136, 42);
++        button->align(LV_ALIGN_TOP_LEFT, 18 + col * 148, 88 + row * 52);
++        button->setRadius(14);
++        button->setBorderWidth(0);
++        button->setShadowWidth(0);
++        button->setBgColor(lv_color_hex(kButtonColor));
++        button->label().setText(kModes[i].label);
++        button->label().setTextFont(&lv_font_montserrat_20);
++        button->label().setTextColor(lv_color_hex(kTextColor));
++        button->label().setWidth(118);
++        button->label().setTextAlign(LV_TEXT_ALIGN_CENTER);
++        button->label().setLongMode(LV_LABEL_LONG_MODE_SCROLL_CIRCULAR);
++        button->onClick().connect([this, i]() { _pending_select = kModes[i].mode; });
++        _mode_buttons.push_back(std::move(button));
++    }
++
++    _refresh_button = std::make_unique<Button>(*_panel);
++    _refresh_button->setSize(128, 34);
++    _refresh_button->align(LV_ALIGN_TOP_MID, 0, 194);
++    _refresh_button->setRadius(14);
++    _refresh_button->setBorderWidth(0);
++    _refresh_button->setShadowWidth(0);
++    _refresh_button->setBgColor(lv_color_hex(kPanelColor));
++    _refresh_button->label().setText("Refresh");
++    _refresh_button->label().setTextFont(&lv_font_montserrat_16);
++    _refresh_button->label().setTextColor(lv_color_hex(kMutedColor));
++    _refresh_button->onClick().connect([this]() { _pending_refresh = true; });
++
++    _hint_label = std::make_unique<Label>(*_panel);
++    _hint_label->setText("Gateway owns the mode");
++    _hint_label->setTextFont(&lv_font_montserrat_16);
++    _hint_label->setTextColor(lv_color_hex(kMutedColor));
++    _hint_label->setWidth(300);
++    _hint_label->setTextAlign(LV_TEXT_ALIGN_CENTER);
++    _hint_label->align(LV_ALIGN_BOTTOM_MID, 0, -8);
++}
++
++void AppA21Mode::update_status_text(const std::string& text, uint32_t color)
++{
++    if (_status_label) {
++        _status_label->setText(text);
++        _status_label->setTextColor(lv_color_hex(color));
++    }
++}
++
++void AppA21Mode::apply_status(const ModeStatus& status)
++{
++    if (!status.error.empty()) {
++        update_status_text(status.error, kErrorColor);
++        _active_available = false;
++        _active_reason = status.error;
++        style_mode_buttons();
++        return;
++    }
++
++    _active_mode = status.activeMode.empty() ? "casual" : status.activeMode;
++    _active_available = status.available;
++    _active_reason = status.reason.empty() ? "available" : status.reason;
++
++    std::string label = "Active: " + _active_mode;
++    if (!_active_available || _active_reason != "available") {
++        label += " / " + _active_reason;
++    }
++    update_status_text(label, _active_available ? kTextColor : kWarnColor);
++    style_mode_buttons();
++}
++
++void AppA21Mode::refresh_status()
++{
++    auto status = request_mode_status();
++    LvglLockGuard lock;
++    _busy = false;
++    apply_status(status);
++}
++
++void AppA21Mode::select_mode(const std::string& mode)
++{
++    auto status = request_select_mode(mode);
++    LvglLockGuard lock;
++    _busy = false;
++    apply_status(status);
++}
++
++AppA21Mode::ModeStatus AppA21Mode::request_mode_status()
++{
++    return request_device_mode("GET", "status", "");
++}
++
++AppA21Mode::ModeStatus AppA21Mode::request_select_mode(const std::string& mode)
++{
++    std::string body = std::string("{\"mode\":\"") + mode + "\"}";
++    return request_device_mode("POST", "select", body);
++}
++
++AppA21Mode::ModeStatus AppA21Mode::request_device_mode(const std::string& method, const std::string& endpoint,
++                                                       const std::string& body)
++{
++    ModeStatus result;
++    std::string token = websocket_auth_header();
++    if (token.empty()) {
++        result.error = "No Xiaozhi token";
++        return result;
++    }
++
++    std::string url = gateway_url(endpoint);
++    if (url.empty()) {
++        result.error = "No gateway URL";
++        return result;
++    }
++
++    auto network = Board::GetInstance().GetNetwork();
++    auto http = network->CreateHttp(3);
++    if (!http) {
++        result.error = "HTTP unavailable";
++        return result;
++    }
++
++    std::string device_id = SystemInfo::GetMacAddress();
++    std::string client_id = Board::GetInstance().GetUuid();
++    http->SetHeader("Device-Id", device_id.c_str());
++    http->SetHeader("Client-Id", client_id.c_str());
++    http->SetHeader("Authorization", token);
++    http->SetHeader("Content-Type", "application/json");
++    if (!body.empty()) {
++        http->SetContent(std::string(body));
++    }
++
++    if (!http->Open(method, url)) {
++        result.error = "Gateway offline";
++        return result;
++    }
++
++    int status_code = http->GetStatusCode();
++    std::string response = http->ReadAll();
++    http->Close();
++    if (status_code != 200) {
++        char message[48];
++        std::snprintf(message, sizeof(message), "HTTP %d", status_code);
++        result.error = message;
++        return result;
++    }
++
++    cJSON* root = cJSON_Parse(response.c_str());
++    if (root == nullptr) {
++        result.error = "Bad JSON";
++        return result;
++    }
++
++    result.activeMode = json_string_value(root, "active_mode");
++    result.requestedMode = json_string_value(root, "requested_mode");
++    result.reason = json_string_value(root, "reason");
++    auto available = cJSON_GetObjectItem(root, "available");
++    result.available = cJSON_IsBool(available) ? cJSON_IsTrue(available) : true;
++    auto override = cJSON_GetObjectItem(root, "override");
++    result.override = cJSON_IsBool(override) && cJSON_IsTrue(override);
++    cJSON_Delete(root);
++
++    return result;
++}
++
++std::string AppA21Mode::gateway_url(const std::string& endpoint)
++{
++    Settings settings("websocket", false);
++    std::string base = trim_copy(settings.GetString("url"));
++    if (base.rfind("ws://", 0) == 0) {
++        base.replace(0, 5, "http://");
++    } else if (base.rfind("wss://", 0) == 0) {
++        base.replace(0, 6, "https://");
++    }
++
++    if (!base.empty()) {
++        size_t xiaozhi_pos = base.find("/xiaozhi/");
++        if (xiaozhi_pos != std::string::npos) {
++            base.resize(xiaozhi_pos);
++        } else {
++            size_t scheme = base.find("://");
++            size_t path_start = base.find('/', scheme == std::string::npos ? 0 : scheme + 3);
++            if (path_start != std::string::npos) {
++                base.resize(path_start);
++            }
++        }
++    }
++
++    if (base.empty()) {
++        return {};
++    }
++    while (!base.empty() && base.back() == '/') {
++        base.pop_back();
++    }
++    return base + "/xiaozhi/device-mode/" + endpoint;
++}
++
++std::string AppA21Mode::websocket_auth_header()
++{
++    Settings settings("websocket", false);
++    std::string token = trim_copy(settings.GetString("token"));
++    if (token.empty()) {
++        return {};
++    }
++    if (token.find(' ') == std::string::npos) {
++        token = "Bearer " + token;
++    }
++    return token;
++}
++
++void AppA21Mode::style_mode_buttons()
++{
++    for (size_t i = 0; i < _mode_buttons.size() && i < kModes.size(); ++i) {
++        const bool is_active = _active_mode == kModes[i].mode;
++        auto color = is_active ? (_active_available ? kActiveColor : kWarnColor) : kButtonColor;
++        _mode_buttons[i]->setBgColor(lv_color_hex(color));
++        _mode_buttons[i]->label().setTextColor(lv_color_hex(is_active ? 0xFFFFFF : kTextColor));
++    }
++}
+diff --git a/firmware/main/apps/app_a21_mode/app_a21_mode.h b/firmware/main/apps/app_a21_mode/app_a21_mode.h
+new file mode 100644
+index 0000000..5345867
+--- /dev/null
++++ b/firmware/main/apps/app_a21_mode/app_a21_mode.h
+@@ -0,0 +1,57 @@
++/*
++ * SPDX-FileCopyrightText: 2026 M5Stack Technology CO LTD
++ *
++ * SPDX-License-Identifier: MIT
++ */
++#pragma once
++#include <mooncake.h>
++#include <smooth_lvgl.hpp>
++#include <uitk/short_namespace.hpp>
++#include <memory>
++#include <string>
++#include <vector>
++
++class AppA21Mode : public mooncake::AppAbility {
++public:
++    AppA21Mode();
++
++    void onCreate() override;
++    void onOpen() override;
++    void onRunning() override;
++    void onClose() override;
++
++private:
++    struct ModeStatus {
++        std::string activeMode;
++        std::string requestedMode;
++        bool override = false;
++        bool available = false;
++        std::string reason;
++        std::string error;
++    };
++
++    std::unique_ptr<uitk::lvgl_cpp::Container> _panel;
++    std::unique_ptr<uitk::lvgl_cpp::Label> _title;
++    std::unique_ptr<uitk::lvgl_cpp::Label> _status_label;
++    std::unique_ptr<uitk::lvgl_cpp::Label> _hint_label;
++    std::vector<std::unique_ptr<uitk::lvgl_cpp::Button>> _mode_buttons;
++    std::unique_ptr<uitk::lvgl_cpp::Button> _refresh_button;
++    std::string _active_mode = "casual";
++    bool _active_available = true;
++    std::string _active_reason = "available";
++    bool _pending_refresh = false;
++    std::string _pending_select;
++    bool _busy = false;
++
++    void build_ui();
++    void update_status_text(const std::string& text, uint32_t color);
++    void apply_status(const ModeStatus& status);
++    void refresh_status();
++    void select_mode(const std::string& mode);
++    ModeStatus request_mode_status();
++    ModeStatus request_select_mode(const std::string& mode);
++    ModeStatus request_device_mode(const std::string& method, const std::string& endpoint, const std::string& body);
++    std::string gateway_url(const std::string& endpoint);
++    std::string websocket_auth_header();
++    void style_mode_buttons();
++};
+diff --git a/firmware/main/apps/apps.h b/firmware/main/apps/apps.h
+index 77cc9b7..74fa2c4 100644
+--- a/firmware/main/apps/apps.h
++++ b/firmware/main/apps/apps.h
+@@ -7,6 +7,7 @@
+ #include "app_launcher/app_launcher.h"
+ #include "app_ai_agent/app_ai_agent.h"
+ #include "app_avatar/app_avatar.h"
++#include "app_a21_mode/app_a21_mode.h"
+ #include "app_setup/app_setup.h"
+ #include "app_espnow_ctrl/app_espnow_ctrl.h"
+ #include "app_app_center/app_app_center.h"
+diff --git a/firmware/main/main.cpp b/firmware/main/main.cpp
+index 164a751..cbf1705 100644
+--- a/firmware/main/main.cpp
++++ b/firmware/main/main.cpp
+@@ -29,6 +29,7 @@ extern "C" void app_main(void)
+     // Install apps
+     GetMooncake().installApp(std::make_unique<AppLauncher>());
+     GetMooncake().installApp(std::make_unique<AppAiAgent>());
++    GetMooncake().installApp(std::make_unique<AppA21Mode>());
+     GetMooncake().installApp(std::make_unique<AppAvatar>());
+     GetMooncake().installApp(std::make_unique<AppEspnowControl>());
+     GetMooncake().installApp(std::make_unique<AppAppCenter>());

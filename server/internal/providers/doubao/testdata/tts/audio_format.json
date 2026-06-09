@@ -1,0 +1,14 @@
+{
+  "provider_output": {
+    "codec": "pcm_s16le",
+    "sample_rate_hz": 16000,
+    "channels": 1,
+    "wire": "base64_json_event"
+  },
+  "xiaozhi_downlink": {
+    "codec": "opus",
+    "sample_rate_hz": 16000,
+    "channels": 1
+  },
+  "gateway_action": "encode_provider_audio_to_xiaozhi_opus"
+}

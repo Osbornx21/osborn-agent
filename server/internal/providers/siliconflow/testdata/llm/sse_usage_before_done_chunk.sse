@@ -1,0 +1,1 @@
+data: {"id":"siliconflow-fixture-llm-001","object":"chat.completion.chunk","created":1780000001,"model":"Qwen/Qwen3.5-35B-A3B","choices":[],"usage":{"prompt_tokens":8,"completion_tokens":2,"total_tokens":10}}
