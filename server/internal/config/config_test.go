@@ -40,6 +40,9 @@ func TestLoadExampleConfigPasses(t *testing.T) {
 	if allowedDeviceTools["self.robot.set_head_angles"] {
 		t.Fatal("example config must not expose head motion in the physical voice hot path by default")
 	}
+	if allowedDeviceTools["self.screen.set_scene"] {
+		t.Fatal("example config must not expose custom screen scenes for official StackChan V1.4.1 by default")
+	}
 	if !allowedDeviceTools["self.robot.set_led_color"] {
 		t.Fatal("example config should keep LED lifecycle feedback available by default")
 	}

@@ -405,8 +405,8 @@ func TestNewWiresAdminStackChanDisplayCardCatalog(t *testing.T) {
 		`"has_static_caption":true`,
 		`"device_count":1`,
 		`"device_id":"stackchan-s3-main"`,
-		`"screen_scene_mcp_available":true`,
-		`"available":true`,
+		`"screen_scene_mcp_available":false`,
+		`"available":false`,
 	} {
 		if !bytes.Contains(recorder.Body.Bytes(), []byte(want)) {
 			t.Fatalf("catalog response missing %s: %s", want, recorder.Body.String())
@@ -455,7 +455,7 @@ func TestNewWiresAdminStackChanExpressionCueCatalog(t *testing.T) {
 		`"device_count":1`,
 		`"device_id":"stackchan-s3-main"`,
 		`"body_mcp_available":true`,
-		`"screen_scene_mcp_available":true`,
+		`"screen_scene_mcp_available":false`,
 		`"available":true`,
 	} {
 		if !bytes.Contains(recorder.Body.Bytes(), []byte(want)) {
@@ -498,7 +498,7 @@ func TestNewWiresAdminStackChanExpressionSequenceCatalog(t *testing.T) {
 		`"device_count":1`,
 		`"device_id":"stackchan-s3-main"`,
 		`"body_mcp_available":true`,
-		`"screen_scene_mcp_available":true`,
+		`"screen_scene_mcp_available":false`,
 		`"available":true`,
 	} {
 		if !bytes.Contains(recorder.Body.Bytes(), []byte(want)) {
@@ -545,8 +545,8 @@ func TestNewWiresAdminStackChanDisplaySceneCatalog(t *testing.T) {
 		`"event":"agent_route.v21"`,
 		`"device_count":1`,
 		`"device_id":"stackchan-s3-main"`,
-		`"screen_scene_mcp_available":true`,
-		`"available":true`,
+		`"screen_scene_mcp_available":false`,
+		`"available":false`,
 	} {
 		if !bytes.Contains(recorder.Body.Bytes(), []byte(want)) {
 			t.Fatalf("catalog response missing %s: %s", want, recorder.Body.String())
@@ -2605,7 +2605,7 @@ func TestWebSocketMCPDeviceReceivesDisplaySceneOnListenStart(t *testing.T) {
 	t.Setenv("STACKCHAN_ADMIN_TOKEN", "admin-token")
 
 	app, err := New(Options{
-		ConfigPath: mockDefaultExampleConfig(t),
+		ConfigPath: mockDefaultExampleConfigWithScreenScene(t),
 		Logger:     slog.New(slog.NewTextHandler(io.Discard, nil)),
 	})
 	if err != nil {
@@ -3070,6 +3070,36 @@ func mockDefaultExampleConfigWithTrace(t *testing.T, tracePath string) string {
 	return writeGatewayConfig(t, config)
 }
 
+func mockDefaultExampleConfigWithScreenScene(t *testing.T) string {
+	t.Helper()
+	configData, err := os.ReadFile("../../configs/stackchan-gateway.example.yaml")
+	if err != nil {
+		t.Fatalf("read base config: %v", err)
+	}
+	config := string(configData)
+	replacements := []struct {
+		old string
+		new string
+	}{
+		{
+			old: `default_profile: "siliconflow-dashscope-voice"`,
+			new: `default_profile: "cn-low-latency-cascade"`,
+		},
+		{
+			old: `      - "self.screen.set_theme"`,
+			new: `      - "self.screen.set_theme"
+      - "self.screen.set_scene"`,
+		},
+	}
+	for _, replacement := range replacements {
+		if !strings.Contains(config, replacement.old) {
+			t.Fatalf("base config missing expected fragment %q", replacement.old)
+		}
+		config = strings.Replace(config, replacement.old, replacement.new, 1)
+	}
+	return writeGatewayConfig(t, config)
+}
+
 func mockProviderProfileCommandExampleConfig(t *testing.T, tracePath string) string {
 	t.Helper()
 	configData, err := os.ReadFile("../../configs/stackchan-gateway.example.yaml")
@@ -3214,6 +3244,11 @@ tools:`,
 			new: `      - "self.robot.get_head_angles"
       - "self.robot.set_head_angles"
       - "self.robot.set_led_color"`,
+		},
+		{
+			old: `      - "self.screen.set_theme"`,
+			new: `      - "self.screen.set_theme"
+      - "self.screen.set_scene"`,
 		},
 		{
 			old: `    event_cues: {}`,

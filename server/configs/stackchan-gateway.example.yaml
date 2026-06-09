@@ -22,7 +22,6 @@ devices:
       - "self.audio_speaker.set_volume"
       - "self.screen.set_brightness"
       - "self.screen.set_theme"
-      - "self.screen.set_scene"
 
 audio:
   uplink_sample_rate_hz: 16000
